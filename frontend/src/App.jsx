@@ -7,21 +7,6 @@ const App = () => {
 
 
       const [Songs, setSongs] = useState([
-        {
-          title: "test1",
-          artist: "test_artist",
-          url: "test_url",
-        },
-        {
-          title: "test2",
-          artist: "test_artist2",
-          url: "test_url2",
-        },
-        {
-          title: "test3",
-          artist: "test_artist3",
-          url: "test_url3",
-        },
       ]);
 
 

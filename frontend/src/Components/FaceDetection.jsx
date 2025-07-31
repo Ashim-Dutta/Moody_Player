@@ -1,15 +1,15 @@
 import React, { useRef, useEffect, useState } from "react";
 import * as faceapi from "face-api.js";
-import axios from 'axios'
+import axios from "axios";
 
-const FaceDetection = ({ setSongs}) => {
+const FaceDetection = ({ setSongs }) => {
   const videoRef = useRef();
   const canvasRef = useRef();
   const containerRef = useRef();
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [detecting, setDetecting] = useState(false);
   const [mood, setMood] = useState("");
-  const [dimensions, setDimensions] = useState({ width: 400, height: 300 }); // Smaller default dimensions
+  const [dimensions, setDimensions] = useState({ width: 400, height: 300 });
 
   // Load face-api models once
   useEffect(() => {
@@ -41,8 +41,8 @@ const FaceDetection = ({ setSongs}) => {
     navigator.mediaDevices
       .getUserMedia({
         video: {
-          width: { ideal: 640 }, // Reduced from 1280
-          height: { ideal: 480 }, // Reduced from 720
+          width: { ideal: 640 },
+          height: { ideal: 480 },
           facingMode: "user",
         },
       })
@@ -63,6 +63,8 @@ const FaceDetection = ({ setSongs}) => {
 
     setDetecting(true);
     setMood("");
+
+    let detectedMood = "";
 
     try {
       const detectionInterval = setInterval(async () => {
@@ -87,32 +89,40 @@ const FaceDetection = ({ setSongs}) => {
           const sorted = Object.entries(expressions).sort(
             (a, b) => b[1] - a[1]
           );
-          setMood(sorted[0][0].charAt(0).toUpperCase() + sorted[0][0].slice(1));
+          detectedMood = sorted[0][0];
+          setMood(detectedMood.charAt(0).toUpperCase() + detectedMood.slice(1));
         }
       }, 300);
 
-      setTimeout(() => {
+      setTimeout(async () => {
         clearInterval(detectionInterval);
         setDetecting(false);
+
+        if (detectedMood) {
+          try {
+            const response = await axios.get(
+              `http://localhost:3000/songs?mood=${detectedMood}`
+            );
+            console.log(response.data);
+            setSongs(response.data.songs);
+          } catch (error) {
+            console.error("Error fetching songs:", error);
+          }
+        } else {
+          console.warn("No face/mood detected.");
+        }
       }, 3000);
-    } 
-    catch (error) {
+    } catch (error) {
       console.error("Detection error:", error);
       setDetecting(false);
     }
-
-    axios.get(`http://localhost:3000/songs?mood=${mood}`)
-      .then((response) => { 
-        console.log(response.data);
-        setSongs(response.data.songs)
-      })
   };
 
   return (
     <div className="flex flex-col p-20 w-[60%]">
       <div
         ref={containerRef}
-        className="relative w-full max-w-md mx-auto  rounded-xl overflow-hidden shadow-lg mb-6 ml-0 "
+        className="relative w-full max-w-md mx-auto rounded-xl overflow-hidden shadow-lg mb-6 ml-0"
         style={{ height: `${dimensions.height}px` }}
       >
         <video
@@ -148,7 +158,7 @@ const FaceDetection = ({ setSongs}) => {
         </button>
 
         {mood && (
-          <div className="text-xl font-semibold text-gray-700 text-center ">
+          <div className="text-xl font-semibold text-gray-700 text-center">
             Mood: <span className="text-blue-600">{mood}</span>
           </div>
         )}
